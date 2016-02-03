@@ -16,9 +16,7 @@ module.exports = AtomMerlinOcaml =
     # Register command that toggles this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'atom-merlin-ocaml:toggle': => @toggle()
 
-    atom.workspace.observeTextEditors (editor) -> (
-      editor.onDidSave ((event) -> console.log event.path)
-    )
+    atom.workspace.observeTextEditors (editor) => editor.onDidSave(@fileSaved)
 
   deactivate: ->
     @modalPanel.destroy()
@@ -35,3 +33,6 @@ module.exports = AtomMerlinOcaml =
       @modalPanel.hide()
     else
       @modalPanel.show()
+
+  fileSaved: (event) ->
+    console.log 'file saved: ' + event.path
