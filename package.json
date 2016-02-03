@@ -1,13 +1,17 @@
 {
-  "name": "atom-merlin-ocaml",
+  "name": "merlin",
   "main": "./lib/atom-merlin-ocaml",
   "version": "0.0.0",
-  "description": "TODO find a better name and also a description.",
+  "description": "Helpful OCaml environment using merlin to highlight issues.",
   "keywords": [
+    "ocaml", "merlin"
   ],
   "activationCommands": {
-    "atom-workspace": "atom-merlin-ocaml:toggle"
+    "atom-workspace": "merlin:toggle"
   },
+  "activationHooks": [
+    "language-ocaml:grammar-used"
+  ],
   "repository": "https://github.com/atom/atom-merlin-ocaml",
   "license": "MIT",
   "engines": {
