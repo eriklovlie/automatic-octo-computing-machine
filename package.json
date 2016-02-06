@@ -7,7 +7,7 @@
     "ocaml", "merlin"
   ],
   "activationCommands": {
-    "atom-workspace": "merlin:toggle"
+    "atom-workspace": "merlin:check"
   },
   "activationHooks": [
     "language-ocaml:grammar-used"
