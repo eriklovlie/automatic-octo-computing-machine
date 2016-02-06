@@ -5,6 +5,7 @@ module.exports = AtomMerlinOcaml =
   atomMerlinOcamlView: null
   modalPanel: null
   subscriptions: null
+  editorsDisposable: null
 
   activate: (state) ->
     @atomMerlinOcamlView = new AtomMerlinOcamlView(state.atomMerlinOcamlViewState)
@@ -16,9 +17,14 @@ module.exports = AtomMerlinOcaml =
     # Register command that toggles this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'atom-merlin-ocaml:toggle': => @toggle()
 
-    atom.workspace.observeTextEditors (editor) => editor.onDidSave(@fileSaved)
+    # Start a Merlin background process.
+    @startMerlinProcess()
+
+    # When files are saved we need to be notified so we can query Merlin for warnings and such.
+    @editorsDisposable = atom.workspace.observeTextEditors (editor) => editor.onDidSave(@fileSaved)
 
   deactivate: ->
+    @editorsDisposable.dispose()
     @modalPanel.destroy()
     @subscriptions.dispose()
     @atomMerlinOcamlView.destroy()
@@ -33,6 +39,9 @@ module.exports = AtomMerlinOcaml =
       @modalPanel.hide()
     else
       @modalPanel.show()
+
+  startMerlinProcess: ->
+    console.log 'Starting Merlin process...'
 
   fileSaved: (event) ->
     console.log 'file saved: ' + event.path
