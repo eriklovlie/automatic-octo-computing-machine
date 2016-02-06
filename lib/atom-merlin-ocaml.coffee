@@ -22,7 +22,7 @@ module.exports = AtomMerlinOcaml =
     @startMerlinProcess()
 
     # When files are saved we need to be notified so we can query Merlin for warnings and such.
-    @editorsDisposable = atom.workspace.observeTextEditors (editor) => editor.onDidSave( (event) => @fileSaved(event) )
+    @editorsDisposable = atom.workspace.observeTextEditors (editor) => editor.onDidSave( (event) => @fileSaved(editor, event) )
 
   deactivate: ->
     @editorsDisposable.dispose()
@@ -70,18 +70,34 @@ module.exports = AtomMerlinOcaml =
       jsonQuery = JSON.stringify(query)
       stdin.write jsonQuery
 
-  fileSaved: (event) ->
+  fileSaved: (editor, event) ->
+    path = require 'path'
+    if path.extname(event.path) not in ['.ml', '.mli'] then return
+
+    # Destroy any markers we've added previously (but don't mess with other markers)
+    # TODO maybe find a prettier solution here... seems like it should be possible
+    # to have our own marker layer but the API is experimental and not really working.
+    for marker in editor.findMarkers({merlin: true})
+      marker.destroy()
+
     # TODO actually learn coffeescript and find a less ugly way to chain promises...
     # NOTE chaining/serializing merlin command/response handling for now...
-    console.log "file saved: #{event.path}"
     @queryMerlin({"context": ["auto", event.path], "query": ["tell", "start", "at", {"line":1, "col":0}]}).then =>
       @queryMerlin({"context": ["auto", event.path], "query": ["tell", "file-eof", event.path]}).then =>
         errorQuery = {"context": ["auto", event.path], "query": ["errors"]}
         errorPromise = @queryMerlin errorQuery
         errorPromise.then (payload) =>
           for err in payload
-            line1 = err.start.line
-            col1 = err.start.col+1
-            line2 = err.end.line
-            col2 = err.end.col+1
+            # rows/columns in Atom are zero-indexed.
+            # rows in merlin are 1-indexed, columns are 0-indexed.
+            line1 = err.start.line - 1
+            col1 = err.start.col
+            line2 = err.end.line - 1
+            col2 = err.end.col
             console.error "start:#{line1},#{col1}, end:#{line2},#{col2}"
+            element = document.createElement('div')
+            element.textContent = err.message
+            marker = editor.markBufferRange([[line1,col1],[line2,col2]], {invalidate: 'inside', merlin: true})
+            editor.decorateMarker(marker, {type: 'block', position: 'after', item: element})
+            editor.decorateMarker(marker, {type: 'highlight', class: 'merlin-error'})
+            editor.decorateMarker(marker, {type: 'line-number', class: 'merlin-error'})
