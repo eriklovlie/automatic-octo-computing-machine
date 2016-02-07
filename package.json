@@ -1,9 +1,13 @@
 {
   "name": "linter-ocaml",
   "main": "./lib/atom-merlin-ocaml",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Lint ocaml on the fly, using merlin.",
-  "keywords": [ "linter", "ocaml", "merlin" ],
+  "keywords": [
+    "linter",
+    "ocaml",
+    "merlin"
+  ],
   "repository": "https://github.com/eriklovlie/automatic-octo-computing-machine",
   "license": "MIT",
   "engines": {
