@@ -40,7 +40,7 @@ module.exports = AtomMerlinOcaml =
     name: 'OCaml Linter'
     grammarScopes: ['source.ocaml']
     scope: 'file'
-    lintOnFly: true
+    lintOnFly: false
     lint: (editor) =>
       filePath = editor.getPath()
       new Promise (resolve, reject) =>
