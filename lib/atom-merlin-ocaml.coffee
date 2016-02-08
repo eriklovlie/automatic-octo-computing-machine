@@ -2,18 +2,29 @@ spawn = require('child_process').spawn
 {createInterface} = require('readline')
 
 module.exports = AtomMerlinOcaml =
+
+  config:
+    merlinpath:
+      type: 'string'
+      default: 'ocamlmerlin'
+
   merlin: null
+  configSubscription: null
 
   activate: (state) ->
-    @startMerlinProcess()
+    @configSubscription =
+      atom.config.observe 'linter-ocaml.merlinpath', (newValue, previous) =>
+        @restartMerlinProcess(newValue)
 
   deactivate: ->
-    @merlin.kill()
+    @merlin.kill() if @merlin?
+    @configSubscription.dispose()
 
-  startMerlinProcess: ->
-    @merlin = spawn 'ocamlmerlin', []
-    console.log "Merlin process started, pid = #{@merlin.pid}"
+  restartMerlinProcess: (path) ->
+    @merlin.kill() if @merlin?
+    @merlin = spawn path, []
     @merlin.on 'exit', (code) -> console.log "Merlin exited with code #{code}"
+    console.log "Merlin process (#{path}) started, pid = #{@merlin.pid}"
 
   queryMerlin: (query) ->
     stdin = @merlin.stdin
