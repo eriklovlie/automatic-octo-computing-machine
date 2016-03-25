@@ -24,14 +24,20 @@ module.exports = AtomMerlinOcaml =
     # Listen for changes to ocaml files so we can sync changes with Merlin.
     @editors = {}
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
-      # TODO there must be a better way to get only editors/buffers
-      # for which this package is active. getGrammar doesn't seem to be it.
-      # For now just check the file extension.
+      if @isOcamlEditor(editor)
+        # Use an object as a set over ocaml files
+        @editors[editor.getPath()] = editor
+
+  isOcamlEditor: (editor) ->
+    # TODO there must be a better way to get only editors/buffers
+    # for which this package is active. getGrammar doesn't seem to be it.
+    # For now just check the file extension.
+    if atom.workspace.isTextEditor(editor)
       p = editor.getPath()
       ext = p.split('.').pop()
-      if ext in ['ml', 'mli']
-        # Use an object as a set over ocaml files
-        @editors[p] = editor
+      ext in ['ml', 'mli']
+    else
+      false
 
   deactivate: ->
     @merlin.kill() if @merlin?
@@ -103,7 +109,7 @@ module.exports = AtomMerlinOcaml =
 
   locate: ->
     editor = atom.workspace.getActiveTextEditor()
-    if atom.workspace.isTextEditor(editor)
+    if @isOcamlEditor(editor)
       path = editor.getPath()
       pos = editor.getCursorBufferPosition()
       @syncAll().then =>
