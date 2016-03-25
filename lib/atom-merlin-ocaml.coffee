@@ -22,7 +22,9 @@ module.exports = AtomMerlinOcaml =
     @subscriptions.add atom.commands.add 'atom-workspace',
       'linter-ocaml:locate': => @locate()
     @subscriptions.add atom.commands.add 'atom-workspace',
-      'linter-ocaml:typeof': => @typeof()
+      'linter-ocaml:locate-return': => @locate_return()
+    @subscriptions.add atom.commands.add 'atom-workspace',
+      'linter-ocaml:type-of': => @type_of()
     # Listen for changes to ocaml files so we can sync changes with Merlin.
     @editors = {}
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
@@ -121,7 +123,11 @@ module.exports = AtomMerlinOcaml =
           jsonResp = JSON.stringify(resp)
           console.log "Resp: #{jsonResp}"
 
-  typeof: ->
+  locate_return: ->
+    # Go back to the last place before using locate.
+    console.log "TODO return from locate"
+
+  type_of: ->
     editor = atom.workspace.getActiveTextEditor()
     if @isOcamlEditor(editor)
       path = editor.getPath()

@@ -1,3 +1,11 @@
-'atom-workspace':
-  'ctrl-alt-l': 'linter-ocaml:locate'
-  'ctrl-alt-t': 'linter-ocaml:typeof'
+# NOTE: try to be consistent with other atom packages. In particular
+# the symbols-view package seems popular.
+'.platform-darwin .editor':
+  'cmd-alt-down': 'linter-ocaml:locate'
+  'cmd-alt-up': 'linter-ocaml:locate-return'
+  'cmd-alt-t': 'linter-ocaml:type-of'
+
+'.platform-linux .editor':
+  'ctrl-alt-down': 'linter-ocaml:locate'
+  'ctrl-alt-up': 'linter-ocaml:locate-return'
+  'ctrl-alt-t': 'linter-ocaml:type-of'
