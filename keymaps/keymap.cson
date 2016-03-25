@@ -1,3 +1,3 @@
 'atom-workspace':
   'ctrl-alt-l': 'linter-ocaml:locate'
-  
+  'ctrl-alt-t': 'linter-ocaml:typeof'

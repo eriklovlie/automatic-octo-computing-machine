@@ -21,6 +21,8 @@ module.exports = AtomMerlinOcaml =
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.commands.add 'atom-workspace',
       'linter-ocaml:locate': => @locate()
+    @subscriptions.add atom.commands.add 'atom-workspace',
+      'linter-ocaml:typeof': => @typeof()
     # Listen for changes to ocaml files so we can sync changes with Merlin.
     @editors = {}
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
@@ -115,6 +117,18 @@ module.exports = AtomMerlinOcaml =
       @syncAll().then =>
         query = @mkQuery(path,
           ["locate",null,"ml","at",@txPos(pos.row, pos.column)])
+        @queryMerlin(query).then (resp) =>
+          jsonResp = JSON.stringify(resp)
+          console.log "Resp: #{jsonResp}"
+
+  typeof: ->
+    editor = atom.workspace.getActiveTextEditor()
+    if @isOcamlEditor(editor)
+      path = editor.getPath()
+      pos = editor.getCursorBufferPosition()
+      @syncAll().then =>
+        query = @mkQuery(path,
+          ["type","enclosing","at",@txPos(pos.row, pos.column)])
         @queryMerlin(query).then (resp) =>
           jsonResp = JSON.stringify(resp)
           console.log "Resp: #{jsonResp}"
