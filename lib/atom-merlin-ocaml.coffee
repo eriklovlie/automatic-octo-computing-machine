@@ -154,7 +154,7 @@ module.exports = AtomMerlinOcaml =
           @getTypeAt(editor.getPath(), range.start).then (resp) =>
             for r in resp
               # NOTE atom notification expects markdown, which we need to escape
-              txt = "``#{r.type}``"
+              txt = "```#{r.type}```"
               atom.notifications.addInfo(txt, {dismissable: true})
               break
       else
