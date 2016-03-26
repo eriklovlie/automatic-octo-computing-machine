@@ -1,6 +1,9 @@
 # linter-ocaml
 
-This is a linter for OCaml using [merlin] for the actual linting. It builds on [atom-linter], like many of the other linter packages.
+This is a linter for OCaml using [merlin] for the actual linting. It builds on
+[atom-linter], like many of the other linter packages. It also uses
+merlin to show types of expressions. More merlin functionality will hopefully
+be exposed as atom commands in the future.
 
 Since it is [atom-linter] that takes care of the decorations I may as well
 steal a screenshot. Imagine the following is OCaml instead of JavaScript:
@@ -10,21 +13,43 @@ steal a screenshot. Imagine the following is OCaml instead of JavaScript:
 [merlin]: https://github.com/the-lambda-church/merlin
 [atom-linter]: https://github.com/atom-community/linter
 
+# Usage
+
+Linting is performed when you save the file.
+
+With [hyperclick] installed you can also cmd-click on a word to activate the
+`linter-ocaml:type-of` command.
+
+Keyboard activated commands:
+
+|Command|Description|Keybinding (Linux)|Keybinding (OS X)|
+|-------|-----------|------------------|-----------------|--------------------|
+|`linter-ocaml:type-of`|Show type of expression at cursor|<kbd>ctrl-alt-?</kbd>|<kbd>cmd-alt-?</kbd>|
+|`linter-ocaml:type-of-widen`|Show type of expression one level up|<kbd>ctrl-alt-.</kbd>|<kbd>cmd-alt-.</kbd>|
+|`linter-ocaml:type-of-narrow`|Show type of expression one level down|<kbd>ctrl-alt-,</kbd>|<kbd>cmd-alt-,</kbd>|
+
 ## Caveat Emptor
 
-This package is not amazingly well tested, since the author is still unfamiliar
-with most of the technologies involved (OCaml, Node.js, CoffeeScript, Atom,
-etc).
+I've now used this myself for some time on a program of a couple of thousand
+LOC, and it seems to work well. However it still has only been tested on
+fairly small programs so YMMV. Bug reports are welcomed.
 
-That said it does appear to work in my (tiny) OCaml projects.
+You should ensure that you are on the latest released merlin version.
 
-## Features
+Tested on OS X and Linux. Not tested at all on Windows, but if you can get
+merlin to work I suppose it should work.
 
-It's a linter so it shows errors and warnings when you save a file. That's it.
+## Other packages
 
-You probably want to install [language-ocaml] to get syntax highlighting.
+Other packages you probably want:
+
+* [language-ocaml] to get syntax highlighting.
+* [minimap] to see errors/warnings in a nice minimappy thing.
+* [hyperclick] to get clicky functionality (cmd-click on symbols).
 
 [language-ocaml]: https://atom.io/packages/language-ocaml
+[minimap]: https://atom.io/packages/minimap
+[hyperclick]: https://atom.io/packages/hyperclick
 
 ## Installation
 
@@ -62,10 +87,14 @@ I then have a small build script:
 
 ```
 #!/usr/bin/env bash
-corebuild -package core_extended -I src yo.byte
+ocamlbuild -package core_extended -I src yo.byte
 ```
 
 The above assumes you have your sources in `src` (and your main program is
 `yo.ml`). The globbing in `.merlin` is needed because `ocamlbuild` makes
 subdirectories inside `_build` and merlin needs to see all the cmi files to
 find symbols and whatnot.
+
+I recommend also installing ocp-indent (also using opam) and run this on source
+files before compilation. Personally I have a simple makefile that runs it
+before running ocamlbuild. Atom refreshes the indented files automatically.

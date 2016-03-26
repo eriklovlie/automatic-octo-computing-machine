@@ -131,6 +131,9 @@ module.exports = AtomMerlinOcaml =
         @queryMerlin(query).then (resp) =>
           jsonResp = JSON.stringify(resp)
           console.log "Resp: #{jsonResp}"
+          # TODO see https://github.com/atom/symbols-view/blob/master/lib/symbols-view.coffee
+          # - @openTag()
+          # - @moveToPosition()
 
   returnFromLocate: ->
     # Go back to the last place before using locate.
@@ -191,8 +194,10 @@ module.exports = AtomMerlinOcaml =
     ]
     marker = editor.markBufferRange(range)
     editor.decorateMarker(marker, type: 'highlight', class: "highlight-blue")
-    # NOTE atom notification expects markdown, which we need to escape
-    txt = "```#{typeat.type}```"
+    # NOTE atom notification expects markdown, which we need to escape.
+    # This string will contain an ocaml type, and it seems like the only
+    # overlap with markdown is the backtick.
+    txt = typeat.type.replace(/`/g, "\\`")
     n = atom.notifications.addInfo(txt, {dismissable: true})
     n.onDidDismiss =>
       marker.destroy()
