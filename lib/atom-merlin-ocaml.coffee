@@ -29,6 +29,8 @@ module.exports = AtomMerlinOcaml =
     @subscriptions.add atom.commands.add 'atom-workspace',
       'linter-ocaml:type-of': => @getSymbolType()
     @subscriptions.add atom.commands.add 'atom-workspace',
+      'linter-ocaml:type-of-narrow': => @getSymbolTypeNarrow()
+    @subscriptions.add atom.commands.add 'atom-workspace',
       'linter-ocaml:type-of-widen': => @getSymbolTypeWiden()
     # Listen for changes to ocaml files so we can sync changes with Merlin.
     @editors = {}
@@ -156,18 +158,9 @@ module.exports = AtomMerlinOcaml =
   getSymbolType: ->
     editor = atom.workspace.getActiveTextEditor()
     if @isOcamlEditor(editor)
-      if @typeAtIndex > 0
-        # user has widened, so narrow cached result instead of going to 0
-        if @showTypeCached?
-          @showTypeCached.marker.destroy()
-          @showTypeCached.notification.dismiss()
-        @typeAtIndex -= 1
-        typeat = @typeAtCached[@typeAtIndex]
-        @showTypeCached = @addTypeAtDecoration(editor, typeat)
-      else
-        # Ask merlin for type and show the narrowest context
-        pos = editor.getCursorBufferPosition()
-        @showTypeAt(editor, pos)
+      # Ask merlin for type and show the narrowest context
+      pos = editor.getCursorBufferPosition()
+      @showTypeAt(editor, pos)
 
   getSymbolTypeWiden: ->
     editor = atom.workspace.getActiveTextEditor()
@@ -177,6 +170,17 @@ module.exports = AtomMerlinOcaml =
         @showTypeCached.notification.dismiss()
       if @typeAtIndex < @typeAtCached.length - 1
         @typeAtIndex += 1
+        typeat = @typeAtCached[@typeAtIndex]
+        @showTypeCached = @addTypeAtDecoration(editor, typeat)
+
+  getSymbolTypeNarrow: ->
+    editor = atom.workspace.getActiveTextEditor()
+    if @isOcamlEditor(editor) and @typeAtCached?
+      if @showTypeCached?
+        @showTypeCached.marker.destroy()
+        @showTypeCached.notification.dismiss()
+      if @typeAtIndex > 0
+        @typeAtIndex -= 1
         typeat = @typeAtCached[@typeAtIndex]
         @showTypeCached = @addTypeAtDecoration(editor, typeat)
 
