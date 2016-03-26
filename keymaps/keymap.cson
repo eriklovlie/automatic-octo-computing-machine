@@ -3,9 +3,11 @@
 '.platform-darwin .editor':
   'cmd-alt-down': 'linter-ocaml:locate'
   'cmd-alt-up': 'linter-ocaml:locate-return'
-  'cmd-alt-t': 'linter-ocaml:type-of'
+  'cmd-alt-shift-down': 'linter-ocaml:type-of'
+  'cmd-alt-shift-up': 'linter-ocaml:type-of-widen'
 
 '.platform-linux .editor':
   'ctrl-alt-down': 'linter-ocaml:locate'
   'ctrl-alt-up': 'linter-ocaml:locate-return'
-  'ctrl-alt-t': 'linter-ocaml:type-of'
+  'cmd-alt-shift-down': 'linter-ocaml:type-of'
+  'cmd-alt-shift-up': 'linter-ocaml:type-of-widen'

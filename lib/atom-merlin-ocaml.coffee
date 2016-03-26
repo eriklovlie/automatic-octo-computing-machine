@@ -13,6 +13,9 @@ module.exports = AtomMerlinOcaml =
   configSubscription: null
   subscriptions: null
   editors: null
+  typeAtCached: null
+  typeAtIndex: 0
+  showTypeCached: null
 
   activate: (state) ->
     @configSubscription =
@@ -25,6 +28,8 @@ module.exports = AtomMerlinOcaml =
       'linter-ocaml:locate-return': => @returnFromLocate()
     @subscriptions.add atom.commands.add 'atom-workspace',
       'linter-ocaml:type-of': => @getSymbolType()
+    @subscriptions.add atom.commands.add 'atom-workspace',
+      'linter-ocaml:type-of-widen': => @getSymbolTypeWiden()
     # Listen for changes to ocaml files so we can sync changes with Merlin.
     @editors = {}
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
@@ -138,12 +143,56 @@ module.exports = AtomMerlinOcaml =
         console.log "Resp: #{jsonResp}"
         resp
 
+  showTypeAt: (editor, pos) ->
+    if @showTypeCached?
+      @showTypeCached.marker.destroy()
+      @showTypeCached.notification.dismiss()
+    path = editor.getPath()
+    @getTypeAt(path, pos).then (resp) =>
+      @typeAtCached = resp
+      if resp.length > 0
+        @showTypeCached = @addTypeAtDecoration(editor, resp[0])
+
   getSymbolType: ->
     editor = atom.workspace.getActiveTextEditor()
     if @isOcamlEditor(editor)
-      path = editor.getPath()
-      pos = editor.getCursorBufferPosition()
-      @getTypeAt(path, pos)
+      if @typeAtIndex > 0
+        # user has widened, so narrow cached result instead of going to 0
+        if @showTypeCached?
+          @showTypeCached.marker.destroy()
+          @showTypeCached.notification.dismiss()
+        @typeAtIndex -= 1
+        typeat = @typeAtCached[@typeAtIndex]
+        @showTypeCached = @addTypeAtDecoration(editor, typeat)
+      else
+        # Ask merlin for type and show the narrowest context
+        pos = editor.getCursorBufferPosition()
+        @showTypeAt(editor, pos)
+
+  getSymbolTypeWiden: ->
+    editor = atom.workspace.getActiveTextEditor()
+    if @isOcamlEditor(editor) and @typeAtCached?
+      if @showTypeCached?
+        @showTypeCached.marker.destroy()
+        @showTypeCached.notification.dismiss()
+      if @typeAtIndex < @typeAtCached.length - 1
+        @typeAtIndex += 1
+        typeat = @typeAtCached[@typeAtIndex]
+        @showTypeCached = @addTypeAtDecoration(editor, typeat)
+
+  addTypeAtDecoration: (editor, typeat) ->
+    range = [
+      @rxPos(typeat.start),
+      @rxPos(typeat.end)
+    ]
+    marker = editor.markBufferRange(range)
+    editor.decorateMarker(marker, type: 'highlight', class: "highlight-blue")
+    # NOTE atom notification expects markdown, which we need to escape
+    txt = "```#{typeat.type}```"
+    n = atom.notifications.addInfo(txt, {dismissable: true})
+    n.onDidDismiss =>
+      marker.destroy()
+    { marker: marker, notification: n }
 
   provideHyperclick: ->
     # OSX: holding down cmd calls getSuggestionForWord()
@@ -151,12 +200,7 @@ module.exports = AtomMerlinOcaml =
       if @isOcamlEditor(editor)
         range: range,
         callback: =>
-          @getTypeAt(editor.getPath(), range.start).then (resp) =>
-            for r in resp
-              # NOTE atom notification expects markdown, which we need to escape
-              txt = "```#{r.type}```"
-              atom.notifications.addInfo(txt, {dismissable: true})
-              break
+          @showTypeAt(editor, range.start)
       else
         null
     providerName: "linter-ocaml"
