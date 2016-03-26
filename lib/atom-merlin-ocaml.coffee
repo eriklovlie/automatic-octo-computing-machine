@@ -22,9 +22,9 @@ module.exports = AtomMerlinOcaml =
     @subscriptions.add atom.commands.add 'atom-workspace',
       'linter-ocaml:locate': => @locate()
     @subscriptions.add atom.commands.add 'atom-workspace',
-      'linter-ocaml:locate-return': => @locate_return()
+      'linter-ocaml:locate-return': => @returnFromLocate()
     @subscriptions.add atom.commands.add 'atom-workspace',
-      'linter-ocaml:type-of': => @type_of()
+      'linter-ocaml:type-of': => @getSymbolType()
     # Listen for changes to ocaml files so we can sync changes with Merlin.
     @editors = {}
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
@@ -36,6 +36,8 @@ module.exports = AtomMerlinOcaml =
     # TODO there must be a better way to get only editors/buffers
     # for which this package is active. getGrammar doesn't seem to be it.
     # For now just check the file extension.
+    # TODO yes there is, see here (although nuclide also checks the ext):
+    # https://github.com/facebooknuclideapm/nuclide-ocaml/blob/master/lib/HyperclickProvider.js
     if atom.workspace.isTextEditor(editor)
       p = editor.getPath()
       ext = p.split('.').pop()
@@ -123,21 +125,42 @@ module.exports = AtomMerlinOcaml =
           jsonResp = JSON.stringify(resp)
           console.log "Resp: #{jsonResp}"
 
-  locate_return: ->
+  returnFromLocate: ->
     # Go back to the last place before using locate.
     console.log "TODO return from locate"
 
-  type_of: ->
+  getTypeAt: (path, pos) ->
+    @syncAll().then =>
+      query = @mkQuery(path,
+        ["type","enclosing","at",@txPos(pos.row, pos.column)])
+      @queryMerlin(query).then (resp) =>
+        jsonResp = JSON.stringify(resp)
+        console.log "Resp: #{jsonResp}"
+        resp
+
+  getSymbolType: ->
     editor = atom.workspace.getActiveTextEditor()
     if @isOcamlEditor(editor)
       path = editor.getPath()
       pos = editor.getCursorBufferPosition()
-      @syncAll().then =>
-        query = @mkQuery(path,
-          ["type","enclosing","at",@txPos(pos.row, pos.column)])
-        @queryMerlin(query).then (resp) =>
-          jsonResp = JSON.stringify(resp)
-          console.log "Resp: #{jsonResp}"
+      @getTypeAt(path, pos)
+
+  provideHyperclick: ->
+    # OSX: holding down cmd calls getSuggestionForWord()
+    getSuggestionForWord = (editor, text, range) =>
+      if @isOcamlEditor(editor)
+        range: range,
+        callback: =>
+          @getTypeAt(editor.getPath(), range.start).then (resp) =>
+            for r in resp
+              # NOTE atom notification expects markdown, which we need to escape
+              txt = "``#{r.type}``"
+              atom.notifications.addInfo(txt, {dismissable: true})
+              break
+      else
+        null
+    providerName: "linter-ocaml"
+    getSuggestionForWord: getSuggestionForWord
 
   provideLinter: ->
     name: 'OCaml Linter'

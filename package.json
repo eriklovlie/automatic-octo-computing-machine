@@ -18,6 +18,11 @@
       "versions": {
         "1.0.0": "provideLinter"
       }
+    },
+    "hyperclick.provider": {
+      "versions": {
+        "0.0.0": "provideHyperclick"
+      }
     }
   },
   "dependencies": {
