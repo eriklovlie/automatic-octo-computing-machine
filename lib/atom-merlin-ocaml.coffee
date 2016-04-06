@@ -2,6 +2,14 @@ spawn = require('child_process').spawn
 {createInterface} = require('readline')
 {CompositeDisposable} = require 'atom'
 
+# TODOs
+# - provide autocomplete using https://github.com/atom/autocomplete-plus
+# - look at the source of https://atom.io/packages/atom-typescript
+# -- autocomplete
+# -- symbols-view integration!
+# -- type-hover
+# -- format code (using ocp-indent)
+
 module.exports = AtomMerlinOcaml =
 
   config:
@@ -45,12 +53,13 @@ module.exports = AtomMerlinOcaml =
     # For now just check the file extension.
     # TODO yes there is, see here (although nuclide also checks the ext):
     # https://github.com/facebooknuclideapm/nuclide-ocaml/blob/master/lib/HyperclickProvider.js
+    isOcaml = false
     if atom.workspace.isTextEditor(editor)
       p = editor.getPath()
-      ext = p.split('.').pop()
-      ext in ['ml', 'mli']
-    else
-      false
+      if p?
+        ext = p.split('.').pop()
+        isOcaml = ext in ['ml', 'mli']
+    isOcaml
 
   deactivate: ->
     @merlin.kill() if @merlin?
