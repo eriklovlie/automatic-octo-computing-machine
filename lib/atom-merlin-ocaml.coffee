@@ -43,16 +43,21 @@ module.exports = AtomMerlinOcaml =
     # Listen for changes to ocaml files so we can sync changes with Merlin.
     @editors = {}
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
-      if @isOcamlEditor(editor)
-        # Use an object as a set over ocaml files
-        @editors[editor.getPath()] = editor
+      if atom.workspace.isTextEditor(editor)
+        path = editor.getPath()
+        if @isOcamlEditor(editor)
+          # This editor we already know has ocaml code and should be linted.
+          @editors[path] = editor
+        # Regardless we need to know when a file has been moved, e.g. renamed
+        # or saved for the first time as an ocaml file.
+        editor.onDidChangePath =>
+          # TODO need to inform merlin if the old file no longer exists!
+          newPath = editor.getPath()
+          console.log "changed path: #{newPath}"
+          delete @editors[path]
+          @editors[newPath] = editor
 
   isOcamlEditor: (editor) ->
-    # TODO there must be a better way to get only editors/buffers
-    # for which this package is active. getGrammar doesn't seem to be it.
-    # For now just check the file extension.
-    # TODO yes there is, see here (although nuclide also checks the ext):
-    # https://github.com/facebooknuclideapm/nuclide-ocaml/blob/master/lib/HyperclickProvider.js
     isOcaml = false
     if atom.workspace.isTextEditor(editor)
       p = editor.getPath()
@@ -82,18 +87,32 @@ module.exports = AtomMerlinOcaml =
         terminal: false,
       })
 
+      count = 1
+      if Array.isArray(query)
+        count = query.length
+
       reader.on 'line', (line) =>
-        reader.close()
         [kind, payload] = JSON.parse(line)
-        if kind == "return"
-          resolve payload
-        else
+        console.log "RESPONSE: #{line}"
+
+        if kind != "return"
           console.error "Merlin returned error response"
           reject(Error(line))
 
-      jsonQuery = JSON.stringify(query)
-      console.log jsonQuery.substring(0,300)
-      stdin.write jsonQuery
+        count -= 1
+        if count == 0
+          reader.close()
+          resolve payload
+
+      if Array.isArray(query)
+        for q,i in query
+          jsonQuery = JSON.stringify(q)
+          console.log jsonQuery.substring(0,300)
+          stdin.write jsonQuery
+      else
+        jsonQuery = JSON.stringify(query)
+        console.log jsonQuery.substring(0,300)
+        stdin.write jsonQuery
 
   mkQuery: (path, q) ->
     {"context": ["auto", path], "query": q}
@@ -107,27 +126,29 @@ module.exports = AtomMerlinOcaml =
     [p.line-1, p.col]
 
   syncFile: (path) ->
-    @queryMerlin(@mkQuery(path, ["tell", "start", "at", @txPos(0,0)])).then =>
-      @queryMerlin(@mkQuery(path, ["tell", "file-eof", path]))
+    [
+      @mkQuery(path, ["tell", "start", "at", @txPos(0,0)]),
+      @mkQuery(path, ["tell", "file-eof", path])
+    ]
 
   syncBuffer: (path, editor) ->
     text = editor.getText()
-    @queryMerlin(@mkQuery(path, ["tell", "start", "at", @txPos(0,0)])).then =>
-      @queryMerlin(@mkQuery(path, ["tell", "source-eof", text]))
+    [
+      @mkQuery(path, ["tell", "start", "at", @txPos(0,0)]),
+      @mkQuery(path, ["tell", "source-eof", text])
+    ]
 
   syncAll: ->
     # TODO this should avoid syncing stuff that hasn't changed...
     # TODO in particular it shouldn't send a ton of json with the buffer contents...
-    last = null
+    queries = []
     for path, editor of @editors
       current = if editor.isModified()
         @syncBuffer(path, editor)
       else
         @syncFile(path)
-      if last?
-        last.then(current)
-      last = current
-    last
+      queries = queries.concat(current)
+    @queryMerlin(queries)
 
   locate: ->
     editor = atom.workspace.getActiveTextEditor()
