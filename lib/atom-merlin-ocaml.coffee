@@ -24,6 +24,7 @@ module.exports = AtomMerlinOcaml =
   typeAtCached: null
   typeAtIndex: 0
   showTypeCached: null
+  locateHistory: []
 
   activate: (state) ->
     @configSubscription =
@@ -161,13 +162,34 @@ module.exports = AtomMerlinOcaml =
         @queryMerlin(query).then (resp) =>
           jsonResp = JSON.stringify(resp)
           console.log "Resp: #{jsonResp}"
-          # TODO see https://github.com/atom/symbols-view/blob/master/lib/symbols-view.coffee
-          # - @openTag()
-          # - @moveToPosition()
+          if not resp.pos?
+            atom.notifications.addInfo(resp)
+          else
+            targetPath = resp.file
+            if not targetPath?
+              targetPath = path
+            targetPos = @rxPos(resp.pos)
+            @gotoLine(targetPath, targetPos[0], targetPos[1])
+            @locateHistory.push { filePath: path, line: pos.row, col: pos.column }
 
   returnFromLocate: ->
     # Go back to the last place before using locate.
-    console.log "TODO return from locate"
+    previous = @locateHistory.pop()
+    if previous?
+      @gotoLine(previous.filePath, previous.line, previous.col)
+
+  gotoLine: (filePath, line, col) ->
+    activeEditor = atom.workspace.getActiveTextEditor()
+    activeFile = activeEditor.getPath()
+    activePos = activeEditor.getCursorBufferPosition()
+
+    if filePath != activeFile
+      atom.workspace.open(filePath, {
+          initialLine: line - 1,
+          initialColumn: col
+      })
+    else
+      atom.workspace.getActiveTextEditor().cursors[0].setBufferPosition([line, col])
 
   getTypeAt: (path, pos) ->
     @syncAll().then =>
