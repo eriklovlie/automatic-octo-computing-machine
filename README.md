@@ -20,6 +20,10 @@ Linting is performed when you save the file.
 With [hyperclick] installed you can also cmd-click on a word to activate the
 `linter-ocaml:type-of` command.
 
+For the keymap some effort has been expended in picking key combinations that
+already seem to be used for similar things in other contexts (e.g. the
+symbols-view package).
+
 Keyboard activated commands:
 
 |Command|Description|Keybinding (Linux)|Keybinding (OS X)|
@@ -27,6 +31,8 @@ Keyboard activated commands:
 |`linter-ocaml:type-of`|Show type of expression at cursor|<kbd>ctrl-alt-?</kbd>|<kbd>cmd-alt-?</kbd>|
 |`linter-ocaml:type-of-widen`|Show type of expression one level up|<kbd>ctrl-alt-.</kbd>|<kbd>cmd-alt-.</kbd>|
 |`linter-ocaml:type-of-narrow`|Show type of expression one level down|<kbd>ctrl-alt-,</kbd>|<kbd>cmd-alt-,</kbd>|
+|`linter-ocaml:locate`|Jump to the symbol at the cursor|<kbd>ctrl-alt-down</kbd>|<kbd>cmd-alt-down</kbd>|
+|`linter-ocaml:locate-return`|Return from the jump|<kbd>ctrl-alt-up</kbd>|<kbd>cmd-alt-up</kbd>|
 
 ## Caveat Emptor
 
